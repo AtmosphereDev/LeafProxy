@@ -13,6 +13,7 @@ import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacketHandler;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
+import dev.vinkyv.leafproxy.config.LeafConfiguration;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -25,15 +26,16 @@ public class LeafServer {
   private ChannelFuture channel;
   private final BedrockPong pong;
 
-  public LeafServer(InetSocketAddress address) {
+  public LeafServer(LeafConfiguration config) {
+    InetSocketAddress address = new InetSocketAddress(config.address, config.port);
     this.address = address;
     this.pong = new BedrockPong()
       .edition("MCPE")
       .gameType("Survival")
-      .motd("§aLeaf§rProxy")
-      .subMotd("§aLeaf§rProxy")
+      .motd(config.motd)
+      .subMotd(config.name)
       .playerCount(0)
-      .maximumPlayerCount(20)
+      .maximumPlayerCount(config.maxPlayers)
       .ipv4Port(this.address.getPort())
       .nintendoLimited(false)
       .protocolVersion(CODEC.getProtocolVersion())
@@ -62,5 +64,14 @@ public class LeafServer {
       .bind(address)
       .syncUninterruptibly();
     Leaf.getLogger().info("Proxy server started at {}", address.getAddress() + ":" + address.getPort());
+  }
+
+  public void shutdown() {
+    
+    if (!channel.isCancelled()) {
+      Leaf.getLogger().info("Closing proxy server...");
+      channel.cancel(true);
+    }
+    Leaf.getLogger().info("Shutdown complete!");
   }
 }

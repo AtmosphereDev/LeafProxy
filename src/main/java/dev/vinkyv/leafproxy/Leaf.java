@@ -1,10 +1,11 @@
 package dev.vinkyv.leafproxy;
 
-import java.net.InetSocketAddress;
 import java.text.DecimalFormat;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import dev.vinkyv.leafproxy.config.LeafConfiguration;
 
 public class Leaf {
   private static final Logger logger;
@@ -13,11 +14,14 @@ public class Leaf {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
     logger = LogManager.getLogger(Leaf.class);
   }
-  
+
   public static void main(String[] args) {
     long startTime = System.currentTimeMillis();
 
-    LeafServer server = new LeafServer(new InetSocketAddress("0.0.0.0", 19132));
+    LeafConfiguration config = new LeafConfiguration();
+    config.load();
+    
+    LeafServer server = new LeafServer(config);
     server.start();
 
     double bootTime = (System.currentTimeMillis() - startTime) / 1000d;
