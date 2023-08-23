@@ -2,9 +2,9 @@
 <Configuration status="INFO" packages="net.minecrell.terminalconsole" shutdownHook="disable">
     <Appenders>
         <TerminalConsole name="Console">
-            <PatternLayout pattern="%cyan{%d{HH:mm:ss}} [%style{%highlight{%level}{STYLE=Logback}}] %minecraftFormatting{%msg}%n"/>
+            <PatternLayout noConsoleNoAnsi="false" pattern="%cyan{%d{HH:mm:ss}} [%style{%highlight{%level}{STYLE=Logback}}] %minecraftFormatting{%msg}%n"/>
         </TerminalConsole>
-        <RollingRandomAccessFile name="File" fileName="logs/leafproxy.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz">
+        <RollingRandomAccessFile name="File" fileName="logs/leafproxy.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [%t] %level - %msg%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy/>

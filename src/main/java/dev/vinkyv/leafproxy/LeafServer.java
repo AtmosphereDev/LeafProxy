@@ -73,9 +73,20 @@ public class LeafServer {
 
     this.running = true;
     Leaf.getLogger().info("Proxy server started at {}", address.getAddress() + ":" + address.getPort());
+    Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
   }
 
   public void shutdown() {
+    if (!this.running) {
+      return;
+    }
+
+    try {
+      Thread.sleep(500);
+    } catch(Exception err) {
+      Leaf.getLogger().error(err);
+    }
+
     this.console.getConsoleThread().interrupt();
 
     if (!channel.isCancelled()) {
@@ -85,6 +96,8 @@ public class LeafServer {
 
     this.running = false;
     Leaf.getLogger().info("Shutdown complete!");
+
+    Leaf.shutdownHook();
   }
 
   public boolean isRunning() {

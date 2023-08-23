@@ -15,8 +15,10 @@ public class Leaf {
   }
 
   public static void main(String[] args) {
-    Thread.currentThread().setName("LeafProxy");
     long startTime = System.currentTimeMillis();
+
+    Thread.currentThread().setName("LeafMain");
+    logger.info("\u001b[38;5;158mLoading LeafProxy...");
 
     LeafConfiguration config = new LeafConfiguration();
     config.load();
@@ -26,6 +28,11 @@ public class Leaf {
 
     double bootTime = (System.currentTimeMillis() - startTime) / 1000d;
     logger.info("Done ({}s)!", new DecimalFormat("#.##").format(bootTime));
+  }
+
+  protected static void shutdownHook() {
+    LogManager.shutdown();
+    Runtime.getRuntime().halt(0);
   }
 
   public static Logger getLogger() {
