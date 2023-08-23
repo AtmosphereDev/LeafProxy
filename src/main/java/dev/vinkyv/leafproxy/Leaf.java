@@ -11,11 +11,11 @@ public class Leaf {
   private static final Logger logger;
 
   static {
-    System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
     logger = LogManager.getLogger(Leaf.class);
   }
 
   public static void main(String[] args) {
+    Thread.currentThread().setName("LeafProxy");
     long startTime = System.currentTimeMillis();
 
     LeafConfiguration config = new LeafConfiguration();

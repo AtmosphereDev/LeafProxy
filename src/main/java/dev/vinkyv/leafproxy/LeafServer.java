@@ -14,12 +14,17 @@ import org.cloudburstmc.protocol.bedrock.packet.BedrockPacketHandler;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
 import dev.vinkyv.leafproxy.config.LeafConfiguration;
+import dev.vinkyv.leafproxy.console.TerminalConsole;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 
 public class LeafServer {
+  private boolean running = false;
+
+  private final TerminalConsole console;
+
   public static final BedrockCodec CODEC = Bedrock_v594.CODEC.toBuilder().build();
 
   private final InetSocketAddress address;
@@ -27,6 +32,8 @@ public class LeafServer {
   private final BedrockPong pong;
 
   public LeafServer(LeafConfiguration config) {
+    this.console = new TerminalConsole(this);
+    this.console.start();
     InetSocketAddress address = new InetSocketAddress(config.address, config.port);
     this.address = address;
     this.pong = new BedrockPong()
@@ -63,15 +70,24 @@ public class LeafServer {
       })
       .bind(address)
       .syncUninterruptibly();
+
+    this.running = true;
     Leaf.getLogger().info("Proxy server started at {}", address.getAddress() + ":" + address.getPort());
   }
 
   public void shutdown() {
-    
+    this.console.getConsoleThread().interrupt();
+
     if (!channel.isCancelled()) {
       Leaf.getLogger().info("Closing proxy server...");
       channel.cancel(true);
     }
+
+    this.running = false;
     Leaf.getLogger().info("Shutdown complete!");
+  }
+
+  public boolean isRunning() {
+    return this.running;
   }
 }
