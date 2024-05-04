@@ -1,41 +1,41 @@
 package dev.vinkyv.leafproxy;
 
-import java.text.DecimalFormat;
-
+import dev.vinkyv.leafproxy.config.LeafConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import dev.vinkyv.leafproxy.config.LeafConfiguration;
+import java.text.DecimalFormat;
 
 public class Leaf {
-  private static final Logger logger;
+	private static final Logger logger;
 
-  static {
-    logger = LogManager.getLogger(Leaf.class);
-  }
+	static {
+		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
+		logger = LogManager.getLogger(Leaf.class);
+	}
 
-  public static void main(String[] args) {
-    long startTime = System.currentTimeMillis();
+	public static void main(String[] args) {
+		long startTime = System.currentTimeMillis();
 
-    Thread.currentThread().setName("LeafMain");
-    logger.info("\u001b[38;5;158mLoading LeafProxy...");
+		Thread.currentThread().setName("LeafMain");
+		logger.info("\u001b[38;5;158mLoading LeafProxy...");
 
-    LeafConfiguration config = new LeafConfiguration();
-    config.load();
-    
-    LeafServer server = new LeafServer(config);
-    server.start();
+		LeafConfiguration config = new LeafConfiguration();
+		config.load();
 
-    double bootTime = (System.currentTimeMillis() - startTime) / 1000d;
-    logger.info("Done ({}s)!", new DecimalFormat("#.##").format(bootTime));
-  }
+		LeafServer server = new LeafServer(config);
+		server.start();
 
-  protected static void shutdownHook() {
-    LogManager.shutdown();
-    Runtime.getRuntime().halt(0);
-  }
+		double bootTime = (System.currentTimeMillis() - startTime) / 1000d;
+		logger.info("Done ({}s)!", new DecimalFormat("#.##").format(bootTime));
+	}
 
-  public static Logger getLogger() {
-    return logger;
-  }
+	protected static void shutdownHook() {
+		LogManager.shutdown();
+		Runtime.getRuntime().halt(0);
+	}
+
+	public static Logger getLogger() {
+		return logger;
+	}
 }
