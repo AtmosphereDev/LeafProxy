@@ -2,6 +2,7 @@ package dev.vinkyv.leafproxy.network.handler;
 
 import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
+import dev.vinkyv.leafproxy.logger.MainLogger;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacketHandler;
@@ -39,7 +40,7 @@ public class LoginHandler implements BedrockPacketHandler {
 		}
 		this.session.setCodec(LeafServer.CODEC);
 
-		Leaf.getLogger().info("[{}] <-> Trying to connect with protocol=({})!", this.session.getSocketAddress(), this.session.getCodec().getProtocolVersion());
+		MainLogger.getLogger().info("[{}] <-> Trying to connect with protocol=({})!", this.session.getSocketAddress(), this.session.getCodec().getProtocolVersion());
 
 		PlayStatusPacket playStatusPacket = new PlayStatusPacket();
 		playStatusPacket.setStatus(PlayStatusPacket.Status.LOGIN_SUCCESS);

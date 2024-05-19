@@ -1,11 +1,14 @@
 package dev.vinkyv.leafproxy.console;
 
+import dev.vinkyv.leafproxy.logger.MainLogger;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 
 import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
 import net.minecrell.terminalconsole.SimpleTerminalConsole;
+
+import java.util.Objects;
 
 public class TerminalConsole extends SimpleTerminalConsole {
 
@@ -24,11 +27,17 @@ public class TerminalConsole extends SimpleTerminalConsole {
 
   @Override
   protected void runCommand(String command) {
-    Leaf.getLogger().error("This command doesn't exists");
+    if (command.equals("stop")) {
+      proxy.shutdown();
+      return;
+    }
+    MainLogger.getLogger().error("This command doesn't exists");
+    return;
   }
 
   @Override
   protected LineReader buildReader(LineReaderBuilder builder) {
+    builder.completer(new CommandCompleter(proxy));
     builder.appName("LeafProxy");
     builder.option(LineReader.Option.HISTORY_BEEP, false);
     builder.option(LineReader.Option.HISTORY_IGNORE_DUPS, true);

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="INFO" packages="net.minecrell.terminalconsole" shutdownHook="disable">
+<Configuration status="WARN" packages="net.minecrell.terminalconsole" shutdownHook="disable">
     <Appenders>
         <TerminalConsole name="Console">
             <PatternLayout noConsoleNoAnsi="false" pattern="%cyan{%d{HH:mm:ss}} [%style{%highlight{%level}{STYLE=Logback}}] %minecraftFormatting{%msg}%n"/>

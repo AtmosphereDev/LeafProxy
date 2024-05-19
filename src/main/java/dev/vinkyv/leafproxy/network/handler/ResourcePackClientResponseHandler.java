@@ -2,6 +2,7 @@ package dev.vinkyv.leafproxy.network.handler;
 
 import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
+import dev.vinkyv.leafproxy.logger.MainLogger;
 import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.math.vector.Vector3i;
@@ -41,10 +42,10 @@ public class ResourcePackClientResponseHandler implements BedrockPacketHandler {
 			startGamePacket.setUniqueEntityId(1); // Change to real one
 			startGamePacket.setRuntimeEntityId(1); // Change to real one
 			startGamePacket.setPlayerGameType(GameType.SURVIVAL); // Change to real one
-			startGamePacket.setPlayerPosition(Vector3f.ZERO); // Change to real one
-			startGamePacket.setDefaultSpawn(Vector3i.ZERO); // Change to real one
+			startGamePacket.setPlayerPosition(Vector3f.ZERO.add(777f, 777f, 777f)); // Change to real one
+			startGamePacket.setDefaultSpawn(Vector3i.ZERO.add(777f, 777f, 777f)); // Change to real one
 			startGamePacket.setRotation(Vector2f.ZERO); // Change to real one
-			startGamePacket.setSeed(-777); // Move to config
+			startGamePacket.setSeed(Leaf.getConfig().seed);
 			startGamePacket.setSpawnBiomeType(SpawnBiomeType.DEFAULT);
 			startGamePacket.setCustomBiomeName("");
 			startGamePacket.setDimensionId(0);
@@ -54,14 +55,14 @@ public class ResourcePackClientResponseHandler implements BedrockPacketHandler {
 			startGamePacket.setDayCycleStopTime(0);
 			startGamePacket.setRainLevel(0f);
 			startGamePacket.setLightningLevel(0f);
-			startGamePacket.setDifficulty(1);
+			startGamePacket.setDifficulty(0);
 			startGamePacket.setEduFeaturesEnabled(false);
 			startGamePacket.setEducationProductionId("");
 			startGamePacket.setPlatformLockedContentConfirmed(false);
 			startGamePacket.setMultiplayerGame(true);
 			startGamePacket.setBroadcastingToLan(true);
-			startGamePacket.setXblBroadcastMode(GamePublishSetting.PUBLIC); // Remove to not get fucked by Mojang
-			startGamePacket.setPlatformBroadcastMode(GamePublishSetting.PUBLIC); // Remove to not get fucked by Mojang
+			startGamePacket.setXblBroadcastMode(GamePublishSetting.PUBLIC);
+			startGamePacket.setPlatformBroadcastMode(GamePublishSetting.PUBLIC);
 			startGamePacket.setCommandsEnabled(true);
 			startGamePacket.setTexturePacksRequired(false);
 			startGamePacket.setExperimentsPreviouslyToggled(false);
@@ -83,8 +84,8 @@ public class ResourcePackClientResponseHandler implements BedrockPacketHandler {
 			startGamePacket.setDisablingPlayerInteractions(false);
 			startGamePacket.setDisablingPersonas(false);
 			startGamePacket.setDisablingCustomSkins(false);
-			startGamePacket.setLevelId("Leaf");
-			startGamePacket.setLevelName("Leaf"); // Move to config
+			startGamePacket.setLevelId("");
+			startGamePacket.setLevelName(Leaf.getConfig().name);
 			startGamePacket.setTrial(false);
 			startGamePacket.setAuthoritativeMovementMode(AuthoritativeMovementMode.CLIENT);
 			startGamePacket.setRewindHistorySize(0);
@@ -121,7 +122,7 @@ public class ResourcePackClientResponseHandler implements BedrockPacketHandler {
 			creativeContentPacket.setContents(new ItemData[0]); // Change to real one
 			session.sendPacket(creativeContentPacket);
 
-			// TODO: Implemen packet
+			// TODO: Implement packet
 			//CraftingDataPacket craftingDataPacket = new CraftingDataPacket();
 			// Add creafting data
 			//craftingDataPacket.setCleanRecipes(true);
@@ -131,35 +132,11 @@ public class ResourcePackClientResponseHandler implements BedrockPacketHandler {
 			playStatus.setStatus(PlayStatusPacket.Status.PLAYER_SPAWN);
 			session.sendPacket(playStatus);
 
-			new Thread(() -> {
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-				TextPacket textPacket = new TextPacket();
-				textPacket.setSourceName("[§aLeafProxy§r]");
-				textPacket.setXuid("");
-				textPacket.setMessage("Welcome to §aLeafProxy§r!");
-				textPacket.setType(TextPacket.Type.ANNOUNCEMENT);
-				session.sendPacket(textPacket);
-			}).start();
-
-			new Thread(() -> {
-				try {
-					Thread.sleep(12000);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-				TransferPacket transferPacket = new TransferPacket();
-				transferPacket.setAddress("bandomas.org");
-				transferPacket.setPort(19132);
-				session.sendPacket(transferPacket);
-			}).start();
+			session.setPacketHandler(new XDHandler(proxy, session));
 
 			return PacketSignal.HANDLED;
 		}
-		Leaf.getLogger().info("Bruh he lost packs "+packet.getStatus().toString());
+		MainLogger.getLogger().info("Bruh he lost packs "+packet.getStatus().toString());
 		session.disconnect("Where is my packs?");
 		return PacketSignal.HANDLED;
 	}
