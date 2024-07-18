@@ -1,6 +1,5 @@
 package dev.vinkyv.leafproxy.network.handler;
 
-import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;

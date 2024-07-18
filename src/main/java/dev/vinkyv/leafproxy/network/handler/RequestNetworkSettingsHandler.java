@@ -2,6 +2,7 @@ package dev.vinkyv.leafproxy.network.handler;
 
 import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
+import dev.vinkyv.leafproxy.scheduler.LeafScheduler;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacketHandler;
@@ -39,6 +40,7 @@ public class RequestNetworkSettingsHandler implements BedrockPacketHandler {
 		session.sendPacketImmediately(networkSettingsPacket);
 		session.setCompression(compressionAlgorithm);
 		session.setPacketHandler(new LoginHandler(proxy, session));
+
 		return PacketSignal.HANDLED;
 	}
 }

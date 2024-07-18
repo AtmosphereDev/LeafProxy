@@ -13,7 +13,7 @@ import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
 import org.cloudburstmc.protocol.bedrock.BedrockPong;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
-import org.cloudburstmc.protocol.bedrock.codec.v671.Bedrock_v671;
+import org.cloudburstmc.protocol.bedrock.codec.v685.Bedrock_v685;
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockServerInitializer;
 
 import java.net.InetSocketAddress;
@@ -25,7 +25,7 @@ public class LeafServer {
 
 	private final TerminalConsole console;
 
-	public static final BedrockCodec CODEC = Bedrock_v671.CODEC.toBuilder().build();
+	public static final BedrockCodec CODEC = Bedrock_v685.CODEC.toBuilder().build();
 
 	private final InetSocketAddress address;
 	private ChannelFuture channel;

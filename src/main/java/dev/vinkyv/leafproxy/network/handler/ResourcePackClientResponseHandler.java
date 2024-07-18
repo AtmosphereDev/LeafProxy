@@ -3,6 +3,11 @@ package dev.vinkyv.leafproxy.network.handler;
 import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
 import dev.vinkyv.leafproxy.logger.MainLogger;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.EmptyByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.internal.EmptyArrays;
 import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.math.vector.Vector3i;
@@ -16,6 +21,7 @@ import org.cloudburstmc.protocol.bedrock.packet.*;
 import org.cloudburstmc.protocol.common.PacketSignal;
 import org.cloudburstmc.protocol.common.util.OptionalBoolean;
 
+import java.nio.ByteOrder;
 import java.util.List;
 import java.util.UUID;
 
@@ -132,7 +138,18 @@ public class ResourcePackClientResponseHandler implements BedrockPacketHandler {
 			playStatus.setStatus(PlayStatusPacket.Status.PLAYER_SPAWN);
 			session.sendPacket(playStatus);
 
+			LevelChunkPacket chunk = new LevelChunkPacket();
+			chunk.setDimension(0);
+			chunk.setChunkX(0);
+			chunk.setChunkZ(0);
+			chunk.setCachingEnabled(false);
+			chunk.setSubChunksLength(0);
+			chunk.setRequestSubChunks(false);
+			chunk.setData(Unpooled.buffer());
+			session.sendPacket(chunk);
+
 			session.setPacketHandler(new XDHandler(proxy, session));
+			MainLogger.getLogger().info("[{}] <-> Connected with protocol=({})!", this.session.getSocketAddress(), this.session.getCodec().getProtocolVersion());
 
 			return PacketSignal.HANDLED;
 		}
