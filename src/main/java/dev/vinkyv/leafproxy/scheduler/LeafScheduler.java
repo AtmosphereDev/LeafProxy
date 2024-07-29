@@ -44,9 +44,19 @@ public class LeafScheduler {
 		instance = this;
 		this.proxy = proxy;
 
-		ThreadFactoryBuilder builder = ThreadFactoryBuilder.builder()
-				.format("LeafScheduler Executor - #%d")
-				.build();
+		//ThreadFactoryBuilder builder = ThreadFactoryBuilder.builder()
+		//		.format("LeafScheduler Executor - #%d")
+		//		.build();
+		ThreadFactoryBuilder builder = new ThreadFactoryBuilder(true, "LeafScheduler Executor - #%d", new Thread.UncaughtExceptionHandler() {
+			@Override
+			public void uncaughtException(Thread t, Throwable e) {
+                try {
+                    throw e.getCause();
+                } catch (Throwable ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+		});
 		//TODO: int idleThreads = this.proxy.getConfiguration().getIdleThreads();
 		int idleThreads = 4;
 		this.threadedExecutor = new ThreadPoolExecutor(idleThreads, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<>(), builder);
@@ -90,7 +100,7 @@ public class LeafScheduler {
 
 	public <T extends Runnable> TaskHandler<T> addTask(T task, int delay, int period, boolean async) {
 		if (delay < 0 || period < 0) {
-			throw new SchedulerException("Attempted to register a task with negative delay or period!");
+			//TODO: throw new SchedulerException("Attempted to register a task with negative delay or period!");
 		}
 
 		int currentTick = this.getCurrentTick();
@@ -162,6 +172,7 @@ public class LeafScheduler {
 	}
 
 	public int getCurrentTick() {
-		return this.proxy.getCurrentTick();
+		//TODO: return this.proxy.getCurrentTick();
+		return 1;
 	}
 }

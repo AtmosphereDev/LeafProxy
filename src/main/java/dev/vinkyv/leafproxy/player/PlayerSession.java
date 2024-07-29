@@ -13,7 +13,7 @@ public class PlayerSession {
 
   public PlayerSession(LeafServer server, BedrockServerSession session) {
     this.server = server;
-    this.player = new Player();
+    this.player = new Player(server, session, LeafServer.compressionAlgorithm);
     this.session = session;
     this.session.setPacketHandler(new BedrockPacketHandler() {
       //try {

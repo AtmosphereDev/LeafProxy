@@ -2,6 +2,7 @@ package dev.vinkyv.leafproxy;
 
 import dev.vinkyv.leafproxy.config.LeafConfiguration;
 import dev.vinkyv.leafproxy.logger.MainLogger;
+import io.netty.util.ResourceLeakDetector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,6 +12,7 @@ public class Leaf {
 	private static LeafConfiguration config;
 
 	public static void main(String[] args) {
+		ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
 		long startTime = System.currentTimeMillis();
 
 		MainLogger logger = MainLogger.getLogger();

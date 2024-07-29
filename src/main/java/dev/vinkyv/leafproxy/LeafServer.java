@@ -3,34 +3,38 @@ package dev.vinkyv.leafproxy;
 import dev.vinkyv.leafproxy.config.LeafConfiguration;
 import dev.vinkyv.leafproxy.console.TerminalConsole;
 import dev.vinkyv.leafproxy.logger.MainLogger;
-import dev.vinkyv.leafproxy.network.handler.RequestNetworkSettingsHandler;
+import dev.vinkyv.leafproxy.network.handler.upstream.UpstreamPacketHandler;
+import dev.vinkyv.leafproxy.network.session.ProxyClientSession;
+import dev.vinkyv.leafproxy.network.session.ProxyServerSession;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.cloudburstmc.netty.channel.raknet.RakChannelFactory;
 import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
+import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockPong;
-import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
 import org.cloudburstmc.protocol.bedrock.codec.v685.Bedrock_v685;
-import org.cloudburstmc.protocol.bedrock.data.CompressionAlgorithm;
+import org.cloudburstmc.protocol.bedrock.codec.v686.Bedrock_v686;
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
-import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockServerInitializer;
+import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockChannelInitializer;
 
 import java.net.InetSocketAddress;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 public class LeafServer {
 	private boolean running = true;
-
+	private final NioEventLoopGroup clientEventLoopGroup = new NioEventLoopGroup();
+	private final Set<Channel> clients = ConcurrentHashMap.newKeySet();
 	private static LeafServer instance;
-
 	private final TerminalConsole console;
-
-	public static final BedrockCodec CODEC = Bedrock_v685.CODEC.toBuilder().build();
-
+	public static final BedrockCodec CODEC = Bedrock_v686.CODEC.toBuilder().build();
 	public static final PacketCompressionAlgorithm compressionAlgorithm = PacketCompressionAlgorithm.ZLIB;
-
 	private final InetSocketAddress address;
 	private ChannelFuture channel;
 	private final BedrockPong pong;
@@ -55,20 +59,47 @@ public class LeafServer {
 
 	public void start() {
 		this.channel = new ServerBootstrap()
+				.group(new NioEventLoopGroup())
 				.channelFactory(RakChannelFactory.server(NioDatagramChannel.class))
 				.option(RakChannelOption.RAK_ADVERTISEMENT, pong.toByteBuf())
-				.group(new NioEventLoopGroup())
-				.childHandler(new BedrockServerInitializer() {
+				.childHandler(new BedrockChannelInitializer<ProxyServerSession>() {
 					@Override
-					protected void initSession(BedrockServerSession session) {
-						session.setCodec(CODEC);
-						session.setPacketHandler(new RequestNetworkSettingsHandler(instance, session));
+					protected ProxyServerSession createSession0(BedrockPeer peer, int subClientId) {
+						return new ProxyServerSession(peer, subClientId);
+					}
+					@Override
+					protected void initSession(ProxyServerSession session) {
+						session.setPacketHandler(new UpstreamPacketHandler(session, LeafServer.instance));
 					}
 				})
 				.bind(address)
-				.syncUninterruptibly();
+				.awaitUninterruptibly();
 		MainLogger.getLogger().info("Proxy server started at {}", address.getAddress() + ":" + address.getPort());
 		Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
+	}
+
+	public void newClient(InetSocketAddress socketAddress, Consumer<ProxyClientSession> sessionConsumer) {
+		Channel channel = new Bootstrap()
+				.group(clientEventLoopGroup)
+				.channelFactory(RakChannelFactory.client(NioDatagramChannel.class))
+				.option(RakChannelOption.RAK_PROTOCOL_VERSION, CODEC.getRaknetProtocolVersion())
+				.handler(new BedrockChannelInitializer<ProxyClientSession>() {
+
+					@Override
+					protected ProxyClientSession createSession0(BedrockPeer peer, int subClientId) {
+						return new ProxyClientSession(peer, subClientId);
+					}
+
+					@Override
+					protected void initSession(ProxyClientSession session) {
+						sessionConsumer.accept(session);
+					}
+				})
+				.connect(socketAddress)
+				.awaitUninterruptibly()
+				.channel();
+
+		this.clients.add(channel);
 	}
 
 	public void shutdown() {

@@ -20,6 +20,5 @@ public class Player {
     }
 
     public void initialConnect() {
-        this.connection.setPacketHandler();
     }
 }
