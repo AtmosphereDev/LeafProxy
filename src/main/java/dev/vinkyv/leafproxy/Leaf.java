@@ -4,7 +4,6 @@ import dev.vinkyv.leafproxy.config.LeafConfiguration;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import io.netty.util.ResourceLeakDetector;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.text.DecimalFormat;
 

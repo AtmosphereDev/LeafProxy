@@ -50,12 +50,12 @@ public class LeafScheduler {
 		ThreadFactoryBuilder builder = new ThreadFactoryBuilder(true, "LeafScheduler Executor - #%d", new Thread.UncaughtExceptionHandler() {
 			@Override
 			public void uncaughtException(Thread t, Throwable e) {
-                try {
-                    throw e.getCause();
-                } catch (Throwable ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
+				try {
+					throw e.getCause();
+				} catch (Throwable ex) {
+					throw new RuntimeException(ex);
+				}
+			}
 		});
 		//TODO: int idleThreads = this.proxy.getConfiguration().getIdleThreads();
 		int idleThreads = 4;

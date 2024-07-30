@@ -1,34 +1,28 @@
 package dev.vinkyv.leafproxy.network.handler.upstream;
 
 import com.google.gson.JsonObject;
-import com.sun.net.httpserver.Filter;
+import com.google.gson.JsonParser;
+import com.nimbusds.jwt.SignedJWT;
 import dev.vinkyv.leafproxy.LeafServer;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import dev.vinkyv.leafproxy.network.handler.downstream.DownstreamPacketHandler;
 import dev.vinkyv.leafproxy.network.session.ProxyServerSession;
-import dev.vinkyv.leafproxy.utils.AuthData;
-import dev.vinkyv.leafproxy.utils.ChainData;
-import dev.vinkyv.leafproxy.utils.ForgeryUtils;
+import dev.vinkyv.leafproxy.utils.HandshakeUtils;
 import org.cloudburstmc.protocol.bedrock.data.EncodingSettings;
 import org.cloudburstmc.protocol.bedrock.packet.*;
-import org.cloudburstmc.protocol.bedrock.util.ChainValidationResult;
 import org.cloudburstmc.protocol.bedrock.util.EncryptionUtils;
-import org.cloudburstmc.protocol.bedrock.util.JsonUtils;
 import org.cloudburstmc.protocol.common.PacketSignal;
-import org.jose4j.json.internal.json_simple.JSONObject;
 
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
 import java.util.List;
-import java.util.Map;
 
 public class UpstreamPacketHandler implements BedrockPacketHandler {
     private final ProxyServerSession session;
     private final LeafServer proxy;
     private List<String> chainData;
-    private JSONObject skinData;
-    private JSONObject extraData;
-    private AuthData authData;
+    private JsonObject clientData;
+    private JsonObject extraData;
 
     public UpstreamPacketHandler(ProxyServerSession session, LeafServer proxy) {
         this.session = session;
@@ -65,20 +59,18 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
     @Override
     public PacketSignal handle(LoginPacket packet) {
         try {
-            ChainValidationResult chain = EncryptionUtils.validateChain(packet.getChain());
+            List<String> chain = packet.getChain();
 
-            extraData = new JSONObject(JsonUtils.childAsType(chain.rawIdentityClaims(), "extraData", Map.class));
+            JsonObject payload = (JsonObject) JsonParser.parseString(SignedJWT.parse(chain.get(chain.size() - 1)).getPayload().toString());
 
-            this.authData = new AuthData(chain.identityClaims().extraData.displayName,
-                    chain.identityClaims().extraData.identity, chain.identityClaims().extraData.xuid);
-            chainData = packet.getChain();
-            this.skinData = new ChainData().decodeToken(packet.getChain().get(1));
+            extraData = HandshakeUtils.parseExtraData(packet, payload);
+            SignedJWT extraDataJwt = SignedJWT.parse(packet.getExtra());
+            clientData = HandshakeUtils.parseClientData(extraDataJwt, extraData, session);
             initializeProxySession();
         } catch (Exception e) {
             session.disconnect("disconnectionScreen.internalError.cantConnect");
             throw new RuntimeException("Unable to complete login", e);
         }
-        initializeProxySession();
         return PacketSignal.HANDLED;
     }
 
@@ -92,21 +84,20 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
 
             KeyPair proxyKeyPair = EncryptionUtils.createKeyPair();
 
-            String authData = ForgeryUtils.forgeAuthData(proxyKeyPair, extraData);
-            String skinData = ForgeryUtils.forgeSkinData(proxyKeyPair, this.skinData);
-            chainData.remove(chainData.size() - 1);
-            chainData.add(authData);
+            SignedJWT signedClientData = HandshakeUtils.createExtraData(proxyKeyPair, extraData);
+            SignedJWT signedExtraData = HandshakeUtils.encodeJWT(proxyKeyPair, clientData);
 
             LoginPacket loginPacket = new LoginPacket();
-            loginPacket.getChain().addAll(chainData);
-            //loginPacket.setExtra(skinData);
+            loginPacket.getChain().add(signedClientData.serialize());
+            loginPacket.setExtra(signedExtraData.serialize());
             loginPacket.setProtocolVersion(LeafServer.CODEC.getProtocolVersion());
 
-            downstream.setPacketHandler(new DownstreamPacketHandler(downstream, proxy, loginPacket));
+            downstream.setPacketHandler(new DownstreamPacketHandler(downstream, proxy, proxyKeyPair, loginPacket));
 
             RequestNetworkSettingsPacket packet = new RequestNetworkSettingsPacket();
             packet.setProtocolVersion(LeafServer.CODEC.getProtocolVersion());
             downstream.sendPacketImmediately(packet);
+
             MainLogger.getLogger().info("New client created!");
         });
     }

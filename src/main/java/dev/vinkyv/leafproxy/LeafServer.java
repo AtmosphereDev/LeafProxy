@@ -12,12 +12,12 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import lombok.Getter;
 import org.cloudburstmc.netty.channel.raknet.RakChannelFactory;
 import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockPong;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
-import org.cloudburstmc.protocol.bedrock.codec.v685.Bedrock_v685;
 import org.cloudburstmc.protocol.bedrock.codec.v686.Bedrock_v686;
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockChannelInitializer;
@@ -28,8 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class LeafServer {
+	@Getter
 	private boolean running = true;
-	private final NioEventLoopGroup clientEventLoopGroup = new NioEventLoopGroup();
+	private final NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
 	private final Set<Channel> clients = ConcurrentHashMap.newKeySet();
 	private static LeafServer instance;
 	private final TerminalConsole console;
@@ -59,7 +60,8 @@ public class LeafServer {
 
 	public void start() {
 		this.channel = new ServerBootstrap()
-				.group(new NioEventLoopGroup())
+				//.group(new NioEventLoopGroup())
+				.group(eventLoopGroup)
 				.channelFactory(RakChannelFactory.server(NioDatagramChannel.class))
 				.option(RakChannelOption.RAK_ADVERTISEMENT, pong.toByteBuf())
 				.childHandler(new BedrockChannelInitializer<ProxyServerSession>() {
@@ -80,7 +82,7 @@ public class LeafServer {
 
 	public void newClient(InetSocketAddress socketAddress, Consumer<ProxyClientSession> sessionConsumer) {
 		Channel channel = new Bootstrap()
-				.group(clientEventLoopGroup)
+				.group(eventLoopGroup)
 				.channelFactory(RakChannelFactory.client(NioDatagramChannel.class))
 				.option(RakChannelOption.RAK_PROTOCOL_VERSION, CODEC.getRaknetProtocolVersion())
 				.handler(new BedrockChannelInitializer<ProxyClientSession>() {
@@ -107,6 +109,9 @@ public class LeafServer {
 			return;
 		}
 
+		this.clients.forEach(Channel::disconnect);
+		this.channel.channel().disconnect();
+
 		try {
 			Thread.sleep(500);
 		} catch (Exception err) {
@@ -124,9 +129,5 @@ public class LeafServer {
 		MainLogger.getLogger().info("Shutdown complete!");
 
 		Leaf.shutdownHook();
-	}
-
-	public boolean isRunning() {
-		return this.running;
 	}
 }
