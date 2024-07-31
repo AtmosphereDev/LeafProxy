@@ -6,6 +6,7 @@ import com.nimbusds.jwt.SignedJWT;
 import dev.vinkyv.leafproxy.LeafServer;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import dev.vinkyv.leafproxy.network.handler.downstream.DownstreamPacketHandler;
+import dev.vinkyv.leafproxy.network.session.ProxyPlayerSession;
 import dev.vinkyv.leafproxy.network.session.ProxyServerSession;
 import dev.vinkyv.leafproxy.utils.HandshakeUtils;
 import org.cloudburstmc.protocol.bedrock.data.EncodingSettings;
@@ -19,6 +20,7 @@ import java.util.List;
 
 public class UpstreamPacketHandler implements BedrockPacketHandler {
     private final ProxyServerSession session;
+    private ProxyPlayerSession player;
     private final LeafServer proxy;
     private List<String> chainData;
     private JsonObject clientData;
@@ -27,6 +29,14 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
     public UpstreamPacketHandler(ProxyServerSession session, LeafServer proxy) {
         this.session = session;
         this.proxy = proxy;
+    }
+
+    @Override
+    public void onDisconnect(String reason) {
+        MainLogger.getLogger().info("[{}] Disconnected!", this.getClass().getName());
+        if (this.session.isConnected()) {
+            session.close(reason);
+        }
     }
 
     @Override
@@ -78,7 +88,7 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
         MainLogger.getLogger().info("Creating new client");
         proxy.newClient(new InetSocketAddress("127.0.0.1", 19132), downstream -> {
             downstream.setCodec(LeafServer.CODEC);
-            downstream.setSendSession(session);
+            downstream.setSendSession(this.session);
             downstream.getPeer().getCodecHelper().setEncodingSettings(EncodingSettings.CLIENT);
             this.session.setSendSession(downstream);
 
@@ -93,6 +103,7 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
             loginPacket.setProtocolVersion(LeafServer.CODEC.getProtocolVersion());
 
             downstream.setPacketHandler(new DownstreamPacketHandler(downstream, proxy, proxyKeyPair, loginPacket));
+            downstream.setLogging(true);
 
             RequestNetworkSettingsPacket packet = new RequestNetworkSettingsPacket();
             packet.setProtocolVersion(LeafServer.CODEC.getProtocolVersion());
