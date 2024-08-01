@@ -1,16 +1,14 @@
 package dev.vinkyv.leafproxy.logger;
 
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class MainLogger {
 	private static final Logger log = LogManager.getLogger(MainLogger.class);
 
+	@Getter
 	private static final MainLogger logger = new MainLogger();
-
-	public static MainLogger getLogger() {
-		return logger;
-	}
 
 	public void debug(String message) {
 		log.debug(message);

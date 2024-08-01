@@ -14,36 +14,21 @@ import org.cloudburstmc.protocol.bedrock.packet.DisconnectPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UnknownPacket;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
+@Setter
 @Getter
 public class ProxyServerSession extends BedrockServerSession {
-	@Setter
 	private BedrockSession sendSession;
+	private ProxyPlayerSession player;
 
 	public ProxyServerSession(BedrockPeer peer, int subClientId) {
 		super(peer, subClientId);
 	}
 
 	@Override
-	public void disconnect(String reason, boolean hideReason) {
-		MainLogger.getLogger().info("[{}] Disconnected!", this.getClass().getName());
-		this.checkForClosed();
-
-		DisconnectPacket packet = new DisconnectPacket();
-		if (reason == null || hideReason) {
-			packet.setMessageSkipped(true);
-			reason = "You have been kicked!";
-		}
-		packet.setKickMessage(reason);
-		this.sendSession.sendPacketImmediately(packet);
-		this.sendSession.close(reason);
-		this.close(reason);
-	}
-
-	@Override
 	protected void onPacket(BedrockPacketWrapper wrapper) {
 		BedrockPacket packet = wrapper.getPacket();
 
-		MainLogger.getLogger().info("[C -> S] {}", wrapper.getPacket().getPacketType());
+		MainLogger.getLogger().debug("[C -> S] {}", wrapper.getPacket().getPacketType());
 
 		if (this.packetHandler == null) {
 			MainLogger.getLogger().warning("Received packet without a packet handler for {} {}", this.getSocketAddress(), packet);

@@ -11,11 +11,9 @@ import dev.vinkyv.leafproxy.network.session.ProxyServerSession;
 import dev.vinkyv.leafproxy.utils.HandshakeUtils;
 import org.cloudburstmc.protocol.bedrock.data.EncodingSettings;
 import org.cloudburstmc.protocol.bedrock.packet.*;
-import org.cloudburstmc.protocol.bedrock.util.EncryptionUtils;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
 import java.net.InetSocketAddress;
-import java.security.KeyPair;
 import java.util.List;
 
 public class UpstreamPacketHandler implements BedrockPacketHandler {
@@ -33,9 +31,11 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
 
     @Override
     public void onDisconnect(String reason) {
-        MainLogger.getLogger().info("[{}] Disconnected!", this.getClass().getName());
-        if (this.session.isConnected()) {
-            session.close(reason);
+        if (session.isConnected()) session.disconnect(reason);
+        if (player != null) {
+            MainLogger.getLogger().info("Disconnected {}", player.getUpstream().getPeer().getSocketAddress().toString());
+            if (player.getDownstream().isConnected()) player.getDownstream().disconnect(reason);
+            if (player.getUpstream().isConnected()) player.getUpstream().disconnect(reason);
         }
     }
 
@@ -92,17 +92,23 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
             downstream.getPeer().getCodecHelper().setEncodingSettings(EncodingSettings.CLIENT);
             this.session.setSendSession(downstream);
 
-            KeyPair proxyKeyPair = EncryptionUtils.createKeyPair();
+            ProxyPlayerSession playerSession = new ProxyPlayerSession(this.session, downstream);
+            this.player = playerSession;
 
-            SignedJWT signedClientData = HandshakeUtils.createExtraData(proxyKeyPair, extraData);
-            SignedJWT signedExtraData = HandshakeUtils.encodeJWT(proxyKeyPair, clientData);
+            downstream.setPlayer(playerSession);
+            this.session.setPlayer(playerSession);
+
+            SignedJWT signedClientData = HandshakeUtils.createExtraData(playerSession.getEncryptionKey(), extraData);
+            SignedJWT signedExtraData = HandshakeUtils.encodeJWT(playerSession.getEncryptionKey(), clientData);
 
             LoginPacket loginPacket = new LoginPacket();
             loginPacket.getChain().add(signedClientData.serialize());
             loginPacket.setExtra(signedExtraData.serialize());
             loginPacket.setProtocolVersion(LeafServer.CODEC.getProtocolVersion());
 
-            downstream.setPacketHandler(new DownstreamPacketHandler(downstream, proxy, proxyKeyPair, loginPacket));
+            this.player.setLoginPacket(loginPacket);
+
+            downstream.setPacketHandler(new DownstreamPacketHandler(downstream, proxy, this.player));
             downstream.setLogging(true);
 
             RequestNetworkSettingsPacket packet = new RequestNetworkSettingsPacket();

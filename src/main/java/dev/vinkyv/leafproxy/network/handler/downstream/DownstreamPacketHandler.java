@@ -4,6 +4,7 @@ import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import dev.vinkyv.leafproxy.network.session.ProxyClientSession;
+import dev.vinkyv.leafproxy.network.session.ProxyPlayerSession;
 import dev.vinkyv.leafproxy.utils.UnknownBlockDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
@@ -31,15 +32,13 @@ import java.util.Base64;
 
 public class DownstreamPacketHandler implements BedrockPacketHandler {
     private final ProxyClientSession session;
+    private final ProxyPlayerSession player;
     private final LeafServer proxy;
-    private final LoginPacket loginPacket;
-    private final KeyPair proxyKeyPair;
 
-    public DownstreamPacketHandler(ProxyClientSession session, LeafServer proxy, KeyPair proxyKeyPair, LoginPacket loginPacket) {
+    public DownstreamPacketHandler(ProxyClientSession session, LeafServer proxy, ProxyPlayerSession player) {
         this.session = session;
         this.proxy = proxy;
-        this.proxyKeyPair = proxyKeyPair;
-        this.loginPacket = loginPacket;
+        this.player = player;
     }
 
     @Override
@@ -47,7 +46,7 @@ public class DownstreamPacketHandler implements BedrockPacketHandler {
         this.session.setCompression(packet.getCompressionAlgorithm());
         MainLogger.getLogger().info("Compression algorithm picked {}", packet.getCompressionAlgorithm());
 
-        this.session.sendPacketImmediately(this.loginPacket);
+        this.session.sendPacketImmediately(player.getLoginPacket());
         return PacketSignal.HANDLED;
     }
 
@@ -59,7 +58,7 @@ public class DownstreamPacketHandler implements BedrockPacketHandler {
             JSONObject saltJwt = new JSONObject(JsonUtil.parseJson(jws.getUnverifiedPayload()));
             String x5u = jws.getHeader(HeaderParameterNames.X509_URL);
             ECPublicKey serverKey = EncryptionUtils.parseKey(x5u);
-            SecretKey key = EncryptionUtils.getSecretKey(proxyKeyPair.getPrivate(), serverKey,
+            SecretKey key = EncryptionUtils.getSecretKey(this.session.getPlayer().getEncryptionKey().getPrivate(), serverKey,
                     Base64.getDecoder().decode(JsonUtils.childAsType(saltJwt, "salt", String.class)));
             session.enableEncryption(key);
         } catch (JoseException | NoSuchAlgorithmException | InvalidKeySpecException | InvalidKeyException e) {
@@ -75,7 +74,6 @@ public class DownstreamPacketHandler implements BedrockPacketHandler {
 
     @Override
     public PacketSignal handle(DisconnectPacket packet) {
-        MainLogger.getLogger().info("[{}] Disconnected!", this.getClass().getName());
         this.session.disconnect();
         // Let the client see the reason too.
         return PacketSignal.UNHANDLED;
@@ -92,6 +90,7 @@ public class DownstreamPacketHandler implements BedrockPacketHandler {
                 .build();
 
         this.session.getPeer().getCodecHelper().setItemDefinitions(itemDefinitions);
+        player.getUpstream().getPeer().getCodecHelper().setItemDefinitions(itemDefinitions);
 
         DefinitionRegistry<BlockDefinition> registry;
         // TODO: Reimplement this
@@ -102,6 +101,9 @@ public class DownstreamPacketHandler implements BedrockPacketHandler {
         }
 
         this.session.getPeer().getCodecHelper().setBlockDefinitions(registry);
+        player.getUpstream().getPeer().getCodecHelper().setBlockDefinitions(registry);
+
+        player.sendPacket(packet);
         return PacketSignal.HANDLED;
     }
 }
