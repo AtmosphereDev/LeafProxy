@@ -1,18 +1,16 @@
 package dev.vinkyv.leafproxy.console;
 
+import dev.vinkyv.leafproxy.LeafServer;
 import dev.vinkyv.leafproxy.logger.MainLogger;
+import lombok.Getter;
+import net.minecrell.terminalconsole.SimpleTerminalConsole;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
-
-import dev.vinkyv.leafproxy.Leaf;
-import dev.vinkyv.leafproxy.LeafServer;
-import net.minecrell.terminalconsole.SimpleTerminalConsole;
-
-import java.util.Objects;
 
 public class TerminalConsole extends SimpleTerminalConsole {
 
   private final LeafServer proxy;
+  @Getter
   private final ConsoleThread consoleThread;
 
   public TerminalConsole(LeafServer proxy) {
@@ -32,7 +30,6 @@ public class TerminalConsole extends SimpleTerminalConsole {
       return;
     }
     MainLogger.getLogger().error("This command doesn't exists");
-    return;
   }
 
   @Override
@@ -50,7 +47,4 @@ public class TerminalConsole extends SimpleTerminalConsole {
     this.proxy.shutdown();
   }
 
-  public ConsoleThread getConsoleThread() {
-    return this.consoleThread;
-  }
 }

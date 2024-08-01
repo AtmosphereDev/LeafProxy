@@ -1,14 +1,12 @@
 package dev.vinkyv.leafproxy.config;
 
-import java.io.IOException;
-import java.nio.file.Paths;
-
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
-import dev.vinkyv.leafproxy.Leaf;
+import java.io.IOException;
+import java.nio.file.Paths;
 
 public class LeafConfiguration {
   public String address = "0.0.0.0";

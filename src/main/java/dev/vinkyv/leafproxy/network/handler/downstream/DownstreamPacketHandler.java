@@ -8,8 +8,6 @@ import dev.vinkyv.leafproxy.network.session.ProxyPlayerSession;
 import dev.vinkyv.leafproxy.utils.UnknownBlockDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.BlockDefinition;
 import org.cloudburstmc.protocol.bedrock.data.definitions.ItemDefinition;
-import org.cloudburstmc.protocol.bedrock.data.definitions.SimpleItemDefinition;
-import org.cloudburstmc.protocol.bedrock.data.inventory.ItemData;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import org.cloudburstmc.protocol.bedrock.util.EncryptionUtils;
 import org.cloudburstmc.protocol.bedrock.util.JsonUtils;
@@ -24,7 +22,6 @@ import org.jose4j.lang.JoseException;
 
 import javax.crypto.SecretKey;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.InvalidKeySpecException;

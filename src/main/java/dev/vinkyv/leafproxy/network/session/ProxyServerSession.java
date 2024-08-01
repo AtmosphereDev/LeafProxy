@@ -4,13 +4,11 @@ import dev.vinkyv.leafproxy.logger.MainLogger;
 import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.Setter;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
 import org.cloudburstmc.protocol.bedrock.BedrockSession;
 import org.cloudburstmc.protocol.bedrock.netty.BedrockPacketWrapper;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
-import org.cloudburstmc.protocol.bedrock.packet.DisconnectPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UnknownPacket;
 import org.cloudburstmc.protocol.common.PacketSignal;
 

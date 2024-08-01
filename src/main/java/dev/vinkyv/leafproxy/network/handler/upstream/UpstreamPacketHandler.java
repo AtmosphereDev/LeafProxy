@@ -20,7 +20,6 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
     private final ProxyServerSession session;
     private ProxyPlayerSession player;
     private final LeafServer proxy;
-    private List<String> chainData;
     private JsonObject clientData;
     private JsonObject extraData;
 
