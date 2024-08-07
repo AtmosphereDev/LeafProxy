@@ -18,6 +18,5 @@ public class CommandCompleter implements Completer {
 	@Override
 	public void complete(LineReader lineReader, ParsedLine parsedLine, List<Candidate> candidates) {
 		candidates.add(new Candidate("stop"));
-		return;
 	}
 }

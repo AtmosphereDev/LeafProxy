@@ -103,4 +103,16 @@ public class DownstreamPacketHandler implements BedrockPacketHandler {
         player.sendPacket(packet);
         return PacketSignal.HANDLED;
     }
+
+    @Override
+    public PacketSignal handle(PlayerListPacket packet) {
+        if (packet.getAction() == PlayerListPacket.Action.ADD) {
+            packet.getEntries().forEach((entry) -> {
+                entry.setXuid(proxy.players.get(entry.getName()).getXuid());
+            });
+        }
+
+        player.sendPacket(packet);
+        return PacketSignal.HANDLED;
+    }
 }

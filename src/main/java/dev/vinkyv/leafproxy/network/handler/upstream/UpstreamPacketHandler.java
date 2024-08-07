@@ -83,8 +83,20 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
         return PacketSignal.HANDLED;
     }
 
+    @Override
+    public PacketSignal handle(TextPacket packet) {
+        if (packet.getType() == TextPacket.Type.CHAT) {
+            packet.setType(TextPacket.Type.RAW);
+            packet.setMessage(packet.getSourceName() + " > " + packet.getMessage());
+            proxy.players.forEach(((s, player) -> player.sendPacket(packet)));
+            return PacketSignal.HANDLED;
+        }
+        return PacketSignal.UNHANDLED;
+    }
+
     private void initializeProxySession() {
         MainLogger.getLogger().info("Creating new client");
+        MainLogger.getLogger().info(this.session.getSocketAddress().toString());
         proxy.newClient(new InetSocketAddress("127.0.0.1", 19132), downstream -> {
             downstream.setCodec(LeafServer.CODEC);
             downstream.setSendSession(this.session);
@@ -106,9 +118,12 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
             loginPacket.setProtocolVersion(LeafServer.CODEC.getProtocolVersion());
 
             this.player.setLoginPacket(loginPacket);
-
+            this.player.setName(extraData.get("displayName").getAsString());
+            this.player.setXuid(extraData.get("XUID").getAsString());
             downstream.setPacketHandler(new DownstreamPacketHandler(downstream, proxy, this.player));
             downstream.setLogging(true);
+
+            proxy.players.put(extraData.get("displayName").getAsString(), player);
 
             RequestNetworkSettingsPacket packet = new RequestNetworkSettingsPacket();
             packet.setProtocolVersion(LeafServer.CODEC.getProtocolVersion());

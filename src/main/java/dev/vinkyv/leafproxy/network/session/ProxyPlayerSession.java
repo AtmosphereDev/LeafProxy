@@ -15,6 +15,10 @@ public class ProxyPlayerSession {
 	private final KeyPair encryptionKey = EncryptionUtils.createKeyPair();
 	@Setter
 	private LoginPacket loginPacket;
+	@Setter
+	private String name;
+	@Setter
+	private String xuid;
 
 	public ProxyPlayerSession(ProxyServerSession upstream, ProxyClientSession downstream) {
 		this.upstream = upstream;

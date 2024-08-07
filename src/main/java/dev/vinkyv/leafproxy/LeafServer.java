@@ -5,6 +5,7 @@ import dev.vinkyv.leafproxy.console.TerminalConsole;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import dev.vinkyv.leafproxy.network.handler.upstream.UpstreamPacketHandler;
 import dev.vinkyv.leafproxy.network.session.ProxyClientSession;
+import dev.vinkyv.leafproxy.network.session.ProxyPlayerSession;
 import dev.vinkyv.leafproxy.network.session.ProxyServerSession;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -13,6 +14,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import lombok.Getter;
+import lombok.Setter;
 import org.cloudburstmc.netty.channel.raknet.RakChannelFactory;
 import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
@@ -23,8 +25,10 @@ import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockChannelInitializer;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
 public class LeafServer {
@@ -39,12 +43,15 @@ public class LeafServer {
 	private final InetSocketAddress address;
 	private ChannelFuture channel;
 	private final BedrockPong pong;
+	private final long serverId;
+	public HashMap<String, ProxyPlayerSession> players = new HashMap<>();
 
 	public LeafServer(LeafConfiguration config) {
 		instance = this;
 		this.console = new TerminalConsole(this);
 		this.console.getConsoleThread().start();
 		this.address = new InetSocketAddress(config.address, config.port);
+		this.serverId = ThreadLocalRandom.current().nextLong();
 		this.pong = new BedrockPong()
 				.edition("MCPE")
 				.gameType("Survival")
@@ -60,10 +67,13 @@ public class LeafServer {
 
 	public void start() {
 		this.channel = new ServerBootstrap()
-				//.group(new NioEventLoopGroup())
-				.group(eventLoopGroup)
 				.channelFactory(RakChannelFactory.server(NioDatagramChannel.class))
+				.group(eventLoopGroup)
+				.option(RakChannelOption.RAK_GUID, this.serverId)
+				//.option(RakChannelOption.RAK_HANDLE_PING, true)
 				.option(RakChannelOption.RAK_ADVERTISEMENT, pong.toByteBuf())
+				.childOption(RakChannelOption.RAK_SESSION_TIMEOUT, 10000L)
+				.childOption(RakChannelOption.RAK_ORDERING_CHANNELS, 1)
 				.childHandler(new BedrockChannelInitializer<ProxyServerSession>() {
 					@Override
 					protected ProxyServerSession createSession0(BedrockPeer peer, int subClientId) {
@@ -82,9 +92,12 @@ public class LeafServer {
 
 	public void newClient(InetSocketAddress socketAddress, Consumer<ProxyClientSession> sessionConsumer) {
 		Channel channel = new Bootstrap()
-				.group(eventLoopGroup)
+				.group(new NioEventLoopGroup())
 				.channelFactory(RakChannelFactory.client(NioDatagramChannel.class))
 				.option(RakChannelOption.RAK_PROTOCOL_VERSION, CODEC.getRaknetProtocolVersion())
+				.option(RakChannelOption.RAK_ORDERING_CHANNELS, 1)
+				.option(RakChannelOption.RAK_GUID, ThreadLocalRandom.current().nextLong())
+				.option(RakChannelOption.RAK_SESSION_TIMEOUT, 10000L)
 				.handler(new BedrockChannelInitializer<ProxyClientSession>() {
 
 					@Override
@@ -97,7 +110,12 @@ public class LeafServer {
 						sessionConsumer.accept(session);
 					}
 				})
-				.connect(socketAddress)
+				.connect(socketAddress).addListener((ChannelFuture future) -> {
+					if (!future.isSuccess()) {
+						MainLogger.getLogger().info("Connection unsuccessful: " + future.cause().getMessage());
+						future.channel().close();
+					}
+				})
 				.awaitUninterruptibly()
 				.channel();
 
