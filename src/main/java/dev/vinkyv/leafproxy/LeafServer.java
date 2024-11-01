@@ -14,13 +14,12 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import lombok.Getter;
-import lombok.Setter;
 import org.cloudburstmc.netty.channel.raknet.RakChannelFactory;
 import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockPong;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
-import org.cloudburstmc.protocol.bedrock.codec.v686.Bedrock_v686;
+import org.cloudburstmc.protocol.bedrock.codec.v748.Bedrock_v748;
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockChannelInitializer;
 
@@ -38,7 +37,7 @@ public class LeafServer {
 	private final Set<Channel> clients = ConcurrentHashMap.newKeySet();
 	private static LeafServer instance;
 	private final TerminalConsole console;
-	public static final BedrockCodec CODEC = Bedrock_v686.CODEC.toBuilder().build();
+	public static final BedrockCodec CODEC = Bedrock_v748.CODEC.toBuilder().build();
 	public static final PacketCompressionAlgorithm compressionAlgorithm = PacketCompressionAlgorithm.ZLIB;
 	private final InetSocketAddress address;
 	private ChannelFuture channel;

@@ -3,6 +3,7 @@ package dev.vinkyv.leafproxy.network.handler.upstream;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.nimbusds.jwt.SignedJWT;
+import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import dev.vinkyv.leafproxy.network.handler.downstream.DownstreamPacketHandler;
@@ -97,7 +98,7 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
     private void initializeProxySession() {
         MainLogger.getLogger().info("Creating new client");
         MainLogger.getLogger().info(this.session.getSocketAddress().toString());
-        proxy.newClient(new InetSocketAddress("127.0.0.1", 19132), downstream -> {
+        proxy.newClient(new InetSocketAddress(Leaf.getConfig().serverAddress, Leaf.getConfig().serverPort),downstream -> {
             downstream.setCodec(LeafServer.CODEC);
             downstream.setSendSession(this.session);
             downstream.getPeer().getCodecHelper().setEncodingSettings(EncodingSettings.CLIENT);

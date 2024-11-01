@@ -46,5 +46,4 @@ public class TerminalConsole extends SimpleTerminalConsole {
   protected void shutdown() {
     this.proxy.shutdown();
   }
-
 }

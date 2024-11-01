@@ -3,12 +3,14 @@ package dev.vinkyv.leafproxy;
 import dev.vinkyv.leafproxy.config.LeafConfiguration;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import io.netty.util.ResourceLeakDetector;
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 
 import java.text.DecimalFormat;
 
 public class Leaf {
-	private static LeafConfiguration config;
+	@Getter
+    private static LeafConfiguration config;
 
 	public static void main(String[] args) {
 		ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
@@ -34,7 +36,4 @@ public class Leaf {
 		Runtime.getRuntime().halt(0);
 	}
 
-	public static LeafConfiguration getConfig() {
-		return config;
-	}
 }
