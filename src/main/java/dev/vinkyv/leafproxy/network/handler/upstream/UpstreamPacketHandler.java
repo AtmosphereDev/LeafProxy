@@ -96,7 +96,7 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
     }
 
     private void initializeProxySession() {
-        MainLogger.getLogger().info("Creating new client");
+        MainLogger.getLogger().info("Connecting {}", extraData.get("displayName").getAsString());
         MainLogger.getLogger().info(this.session.getSocketAddress().toString());
         proxy.newClient(new InetSocketAddress(Leaf.getConfig().serverAddress, Leaf.getConfig().serverPort),downstream -> {
             downstream.setCodec(LeafServer.CODEC);
@@ -130,7 +130,7 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
             packet.setProtocolVersion(LeafServer.CODEC.getProtocolVersion());
             downstream.sendPacketImmediately(packet);
 
-            MainLogger.getLogger().info("New client created!");
+            MainLogger.getLogger().info("{} connected!", extraData.get("displayName").getAsString());
         });
     }
 }

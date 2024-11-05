@@ -1,5 +1,6 @@
 package dev.vinkyv.leafproxy;
 
+import com.sun.tools.javac.Main;
 import dev.vinkyv.leafproxy.config.LeafConfiguration;
 import dev.vinkyv.leafproxy.console.TerminalConsole;
 import dev.vinkyv.leafproxy.logger.MainLogger;
@@ -76,6 +77,7 @@ public class LeafServer {
 				.childHandler(new BedrockChannelInitializer<ProxyServerSession>() {
 					@Override
 					protected ProxyServerSession createSession0(BedrockPeer peer, int subClientId) {
+						MainLogger.getLogger().info("Incomming connection {}", peer.getSocketAddress());
 						return new ProxyServerSession(peer, subClientId);
 					}
 					@Override
@@ -126,7 +128,11 @@ public class LeafServer {
 			return;
 		}
 
-		this.clients.forEach(Channel::disconnect);
+		this.players.forEach((String name, ProxyPlayerSession session) -> {
+			MainLogger.getLogger().info("Player " + name + " disconnected!");
+			session.disconnect("Proxy shutdown");
+		});
+
 		this.channel.channel().disconnect();
 
 		try {

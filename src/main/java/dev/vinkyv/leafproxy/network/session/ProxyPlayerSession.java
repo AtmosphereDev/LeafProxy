@@ -25,6 +25,15 @@ public class ProxyPlayerSession {
 		this.downstream = downstream;
 	}
 
+	public void disconnect() {
+		this.disconnect("");
+	}
+
+	public void disconnect(String reason) {
+		upstream.disconnect(reason);
+		downstream.disconnect(reason);
+	}
+
 	public void sendPacket(BedrockPacket packet) {
 		getUpstream().sendPacket(packet);
 	}
