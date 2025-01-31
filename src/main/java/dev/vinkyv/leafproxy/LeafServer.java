@@ -1,7 +1,7 @@
 package dev.vinkyv.leafproxy;
 
-import com.sun.tools.javac.Main;
-import dev.vinkyv.leafproxy.config.LeafConfiguration;
+import dev.vinkyv.leafproxy.command.CommandMap;
+import dev.vinkyv.leafproxy.config.LeafConfig;
 import dev.vinkyv.leafproxy.console.TerminalConsole;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import dev.vinkyv.leafproxy.network.handler.upstream.UpstreamPacketHandler;
@@ -15,12 +15,14 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import lombok.Getter;
+import org.checkerframework.checker.units.qual.C;
 import org.cloudburstmc.netty.channel.raknet.RakChannelFactory;
 import org.cloudburstmc.netty.channel.raknet.config.RakChannelOption;
 import org.cloudburstmc.protocol.bedrock.BedrockPeer;
 import org.cloudburstmc.protocol.bedrock.BedrockPong;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
-import org.cloudburstmc.protocol.bedrock.codec.v748.Bedrock_v748;
+import org.cloudburstmc.protocol.bedrock.codec.v685.Bedrock_v685;
+import org.cloudburstmc.protocol.bedrock.codec.v766.Bedrock_v766;
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
 import org.cloudburstmc.protocol.bedrock.netty.initializer.BedrockChannelInitializer;
 
@@ -38,42 +40,45 @@ public class LeafServer {
 	private final Set<Channel> clients = ConcurrentHashMap.newKeySet();
 	private static LeafServer instance;
 	private final TerminalConsole console;
-	public static final BedrockCodec CODEC = Bedrock_v748.CODEC.toBuilder().build();
+	public static final BedrockCodec CODEC = Bedrock_v685.CODEC.toBuilder().build();
+	public static final BedrockCodec MAXCODEC = Bedrock_v766.CODEC.toBuilder().build();
 	public static final PacketCompressionAlgorithm compressionAlgorithm = PacketCompressionAlgorithm.ZLIB;
 	private final InetSocketAddress address;
 	private ChannelFuture channel;
 	private final BedrockPong pong;
 	private final long serverId;
 	public HashMap<String, ProxyPlayerSession> players = new HashMap<>();
+	public CommandMap commandMap = new CommandMap();
 
-	public LeafServer(LeafConfiguration config) {
+	public LeafServer(LeafConfig config) {
 		instance = this;
 		this.console = new TerminalConsole(this);
 		this.console.getConsoleThread().start();
-		this.address = new InetSocketAddress(config.address, config.port);
+		this.address = new InetSocketAddress(config.getAddress(), config.getPort());
 		this.serverId = ThreadLocalRandom.current().nextLong();
 		this.pong = new BedrockPong()
 				.edition("MCPE")
 				.gameType("Survival")
-				.motd(config.motd)
-				.subMotd(config.subMotd)
+				.motd(config.getMotd())
+				.subMotd(config.getSubMotd())
 				.playerCount(0)
-				.maximumPlayerCount(config.maxPlayers)
-				.ipv4Port(this.address.getPort())
-				.nintendoLimited(false)
+				.maximumPlayerCount(config.getMaxPlayers())
+				.gameType("Survival")
+				.version("1.0.0")
 				.protocolVersion(CODEC.getProtocolVersion())
-				.version("1.0.0");
+				.ipv4Port(this.address.getPort())
+				.ipv6Port(this.address.getPort())
+				.nintendoLimited(false);
 	}
 
 	public void start() {
 		this.channel = new ServerBootstrap()
 				.channelFactory(RakChannelFactory.server(NioDatagramChannel.class))
-				.group(eventLoopGroup)
 				.option(RakChannelOption.RAK_GUID, this.serverId)
-				//.option(RakChannelOption.RAK_HANDLE_PING, true)
 				.option(RakChannelOption.RAK_ADVERTISEMENT, pong.toByteBuf())
 				.childOption(RakChannelOption.RAK_SESSION_TIMEOUT, 10000L)
 				.childOption(RakChannelOption.RAK_ORDERING_CHANNELS, 1)
+				.group(eventLoopGroup)
 				.childHandler(new BedrockChannelInitializer<ProxyServerSession>() {
 					@Override
 					protected ProxyServerSession createSession0(BedrockPeer peer, int subClientId) {

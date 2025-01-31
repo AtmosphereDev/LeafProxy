@@ -2,6 +2,7 @@ package dev.vinkyv.leafproxy.config;
 
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import org.spongepowered.configurate.CommentedConfigurationNode;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
@@ -14,7 +15,7 @@ public class LeafConfiguration {
   public String serverAddress = "127.0.0.1";
   public int serverPort = 19142;
   public String motd = "§aLeaf§rProxy";
-  public String subMotd = "github.com/VinkyV/LeafProxy";
+  public String subMotd = "github.com/AtmosphereDev/LeafProxy";
   public String name = "§aLeaf is great!";
   public int maxPlayers = 20;
   public boolean onlineMode = true;
@@ -31,6 +32,7 @@ public class LeafConfiguration {
     
     try {
       CommentedConfigurationNode config = loader.load();
+      LeafConfig leafConfig = config.get(LeafConfig.class);
       
       if (config.empty()) {
         config.node("address").set(address);
@@ -60,5 +62,18 @@ public class LeafConfiguration {
     } catch(IOException error) {
       MainLogger.getLogger().error(error.getMessage());
     }
+  }
+
+  @ConfigSerializable
+  static class LeafConfig {
+    public String address = "0.0.0.0";
+    public int port = 19132;
+    public String serverAddress = "127.0.0.1";
+    public int serverPort = 19142;
+    public String motd = "§aLeaf§rProxy";
+    public String subMotd = "github.com/AtmosphereDev/LeafProxy";
+    public String name = "§aLeaf is great!";
+    public int maxPlayers = 20;
+    public boolean onlineMode = true;
   }
 }

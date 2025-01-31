@@ -4,8 +4,8 @@ import dev.vinkyv.leafproxy.command.Command;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 
 public class TestCommand extends Command {
-    public TestCommand(String name) {
-        super(name);
+    public TestCommand() {
+        super("test");
     }
 
     @Override

@@ -1,6 +1,7 @@
 package dev.vinkyv.leafproxy;
 
-import dev.vinkyv.leafproxy.config.LeafConfiguration;
+import dev.vinkyv.leafproxy.config.LeafConfig;
+import dev.vinkyv.leafproxy.config.LeafConfigLoader;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import io.netty.util.ResourceLeakDetector;
 import lombok.Getter;
@@ -10,7 +11,9 @@ import java.text.DecimalFormat;
 
 public class Leaf {
 	@Getter
-    private static LeafConfiguration config;
+    private static LeafConfig config;
+	@Getter
+	private static LeafServer leafServer;
 
 	public static void main(String[] args) {
 		ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
@@ -21,11 +24,10 @@ public class Leaf {
 		Thread.currentThread().setName("LeafMain");
 		logger.info("\u001b[38;5;158mLoading LeafProxy...");
 
-		config = new LeafConfiguration();
-		config.load();
+		config = new LeafConfigLoader().load();
 
-		LeafServer server = new LeafServer(config);
-		server.start();
+		leafServer = new LeafServer(config);
+		leafServer.start();
 
 		double bootTime = (System.currentTimeMillis() - startTime) / 1000d;
 		logger.info("Done ({}s)!", new DecimalFormat("#.##").format(bootTime));

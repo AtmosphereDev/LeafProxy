@@ -7,10 +7,13 @@ import dev.vinkyv.leafproxy.Leaf;
 import dev.vinkyv.leafproxy.LeafServer;
 import dev.vinkyv.leafproxy.logger.MainLogger;
 import dev.vinkyv.leafproxy.network.handler.downstream.DownstreamPacketHandler;
+import dev.vinkyv.leafproxy.network.protocol.ProtocolVersion;
 import dev.vinkyv.leafproxy.network.session.ProxyPlayerSession;
 import dev.vinkyv.leafproxy.network.session.ProxyServerSession;
 import dev.vinkyv.leafproxy.utils.HandshakeUtils;
 import org.cloudburstmc.protocol.bedrock.data.EncodingSettings;
+import org.cloudburstmc.protocol.bedrock.data.inventory.ContainerSlotType;
+import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.response.ItemStackResponseContainer;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
@@ -36,6 +39,7 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
             MainLogger.getLogger().info("Disconnected {}", player.getUpstream().getPeer().getSocketAddress().toString());
             if (player.getDownstream().isConnected()) player.getDownstream().disconnect(reason);
             if (player.getUpstream().isConnected()) player.getUpstream().disconnect(reason);
+            proxy.players.remove(player);
         }
     }
 
@@ -43,21 +47,25 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
     public PacketSignal handle(RequestNetworkSettingsPacket packet) {
         int protocolVersion = packet.getProtocolVersion();
 
-        if (protocolVersion != LeafServer.CODEC.getProtocolVersion()) {
+        if (protocolVersion > LeafServer.MAXCODEC.getProtocolVersion() || protocolVersion < LeafServer.CODEC.getProtocolVersion()) {
             PlayStatusPacket playStatusPacket = new PlayStatusPacket();
-            if (protocolVersion > LeafServer.CODEC.getProtocolVersion()) {
+
+            if (protocolVersion > LeafServer.MAXCODEC.getProtocolVersion()) {
                 playStatusPacket.setStatus(PlayStatusPacket.Status.LOGIN_FAILED_SERVER_OLD);
-            } else {
+            }
+
+            if (protocolVersion < LeafServer.CODEC.getProtocolVersion()) {
                 playStatusPacket.setStatus(PlayStatusPacket.Status.LOGIN_FAILED_CLIENT_OLD);
             }
 
             session.sendPacketImmediately(playStatusPacket);
             return PacketSignal.HANDLED;
         }
-        session.setCodec(LeafServer.CODEC);
+
+        session.setCodec(ProtocolVersion.get(protocolVersion).getBedrockCodec());
 
         NetworkSettingsPacket networkSettingsPacket = new NetworkSettingsPacket();
-        networkSettingsPacket.setCompressionThreshold(0);
+        networkSettingsPacket.setCompressionThreshold(Leaf.getConfig().getCompressionThreshold());
         networkSettingsPacket.setCompressionAlgorithm(LeafServer.compressionAlgorithm);
 
         session.sendPacketImmediately(networkSettingsPacket);
@@ -95,10 +103,33 @@ public class UpstreamPacketHandler implements BedrockPacketHandler {
         return PacketSignal.UNHANDLED;
     }
 
+    @Override
+    public PacketSignal handle(ItemStackResponsePacket packet) {
+        // TODO: Make it workable
+        return PacketSignal.HANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(ServerboundLoadingScreenPacket packet) {
+        return PacketSignal.HANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(ServerboundDiagnosticsPacket packet) {
+        return PacketSignal.HANDLED;
+    }
+
+    @Override
+    public PacketSignal handle(PacketViolationWarningPacket packet) {
+        MainLogger.getLogger().debug(packet.toString());
+        session.sendPacket(packet);
+        return PacketSignal.HANDLED;
+    }
+
     private void initializeProxySession() {
         MainLogger.getLogger().info("Connecting {}", extraData.get("displayName").getAsString());
         MainLogger.getLogger().info(this.session.getSocketAddress().toString());
-        proxy.newClient(new InetSocketAddress(Leaf.getConfig().serverAddress, Leaf.getConfig().serverPort),downstream -> {
+        proxy.newClient(new InetSocketAddress(Leaf.getConfig().getServerAddress(), Leaf.getConfig().getServerPort()),downstream -> {
             downstream.setCodec(LeafServer.CODEC);
             downstream.setSendSession(this.session);
             downstream.getPeer().getCodecHelper().setEncodingSettings(EncodingSettings.CLIENT);

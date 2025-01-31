@@ -25,11 +25,10 @@ public class TerminalConsole extends SimpleTerminalConsole {
 
   @Override
   protected void runCommand(String command) {
-    if (command.equals("stop")) {
-      proxy.shutdown();
-      return;
+    if (command.startsWith("/")) {
+      command = command.substring(1);
     }
-    MainLogger.getLogger().error("This command doesn't exists");
+    proxy.commandMap.executeCommand(command);
   }
 
   @Override

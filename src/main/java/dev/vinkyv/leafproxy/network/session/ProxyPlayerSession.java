@@ -30,8 +30,8 @@ public class ProxyPlayerSession {
 	}
 
 	public void disconnect(String reason) {
-		upstream.disconnect(reason);
-		downstream.disconnect(reason);
+		if (upstream.isConnected()) upstream.disconnect(reason);
+		if (downstream.isConnected()) downstream.disconnect(reason);
 	}
 
 	public void sendPacket(BedrockPacket packet) {

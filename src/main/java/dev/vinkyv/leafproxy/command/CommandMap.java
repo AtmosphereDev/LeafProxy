@@ -1,6 +1,8 @@
 package dev.vinkyv.leafproxy.command;
 
+import dev.vinkyv.leafproxy.command.defaults.EndCommand;
 import dev.vinkyv.leafproxy.command.defaults.TestCommand;
+import dev.vinkyv.leafproxy.logger.MainLogger;
 
 import java.util.HashMap;
 
@@ -12,11 +14,12 @@ public class CommandMap {
     }
 
     private void registerDefault() {
-        this.register("leaf", new TestCommand("test"));
+        this.register(new EndCommand());
+        this.register(new TestCommand());
     }
 
-    public void register(String prefix, Command command) {
-        this.commands.put(prefix + ":" + command.getName(), command);
+    public void register(Command command) {
+        this.commands.put(command.getName(), command);
     }
 
     public Command getCommand(String name) {
@@ -31,19 +34,18 @@ public class CommandMap {
         return commands;
     }
 
-    public int executeCommand(String command) {
+    public void executeCommand(String command) {
         Command target = this.getCommand(command);
         if (target == null) {
-            // TODO: SEND NOT FOUND
-            return -1;
+            MainLogger.getLogger().error("This command doesn't exists");
+            return;
         }
         int output;
         try {
             output = target.execute() ? 1 : 0;
         } catch (UnsupportedOperationException e) {
-            // TODO: SEND UNKNOWN ERROR
+            MainLogger.getLogger().error("Something wrong with this command");
             output = 0;
         }
-        return output;
     }
 }
